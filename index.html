@@ -97,8 +97,18 @@
   @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.12); } }
 
   /* ---- 倒计时 ---- */
-  .clock { font-size: 40px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
-  .clock-sub { font-size: 13px; color: #999; margin: 2px 0 12px; }
+  .clockin-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .clockin-row label { font-size: 14px; font-weight: 700; white-space: nowrap; }
+  .clockin-row input {
+    font-family: inherit; font-size: 15px; font-weight: 700; color: var(--ink);
+    padding: 7px 12px; border: 2px solid var(--ink); border-radius: 12px;
+    background: #fffdf5; outline: none;
+  }
+  .clockin-row .tip { font-size: 12px; color: #b0a488; }
+  .dual-clock { display: flex; gap: 14px; flex-wrap: wrap; }
+  .clock-item { flex: 1; min-width: 120px; }
+  .clock-label { font-size: 12px; color: #8a7f68; font-weight: 700; margin-bottom: 2px; }
+  .clock { font-size: 27px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
   .day-bar { height: 14px; border: 2px solid var(--ink); border-radius: 999px; background: #f4ecd7; overflow: hidden; }
   .day-bar > div { height: 100%; background: repeating-linear-gradient(-45deg, #ffb35c 0 8px, #ffc87a 8px 16px); }
   .day-note { font-size: 13px; color: #8a7f68; margin-top: 6px; }
@@ -226,11 +236,24 @@
 
   <!-- ============ 下班倒计时 ============ -->
   <div class="toy">
-    <h3>⏰ 牛马进度条</h3>
-    <div class="desc">距离解放还有——</div>
-    <div class="clock" id="countdown">--:--:--</div>
-    <div class="clock-sub" id="clockSub"></div>
-    <div class="day-bar"><div id="dayBar" style="width:0%"></div></div>
+    <h3>⏰ 弹性牛马进度条</h3>
+    <div class="desc">今天几点打的卡？填一下，剩下交给进度条</div>
+    <div class="clockin-row">
+      <label for="clockinInput">打卡时间</label>
+      <input type="time" id="clockinInput">
+      <span class="tip">记在今天，明天再填</span>
+    </div>
+    <div class="dual-clock">
+      <div class="clock-item">
+        <div class="clock-label">🍚 距离干饭（18:00）</div>
+        <div class="clock" id="dinnerClock">--:--:--</div>
+      </div>
+      <div class="clock-item">
+        <div class="clock-label">🏁 距离下班（打卡 + 9h）</div>
+        <div class="clock" id="offClock">--:--:--</div>
+      </div>
+    </div>
+    <div style="margin-top:12px;"><div class="day-bar"><div id="dayBar" style="width:0%"></div></div></div>
     <div class="day-note" id="dayNote"></div>
   </div>
 
@@ -416,38 +439,57 @@ function pickOne() {
   }, 110);
 }
 
-/* ================= 牛马进度条（到 18:00） ================= */
+/* ================= 弹性牛马进度条（打卡 + 9h 下班，18:00 干饭） ================= */
+var CLOCKIN_KEY = "toy_clockin";
+var clockinInput = document.getElementById("clockinInput");
+clockinInput.value = localStorage.getItem(CLOCKIN_KEY) || "09:00";
+clockinInput.onchange = function () {
+  if (!this.value) return;
+  localStorage.setItem(CLOCKIN_KEY, this.value);
+  tick();
+};
+function clockinDate() {
+  var v = clockinInput.value || "09:00";
+  var p = v.split(":");
+  var d = new Date(); d.setHours(+p[0], +p[1], 0, 0);
+  return d;
+}
+function fmtRemain(ms) {
+  var s = Math.max(0, Math.floor(ms / 1000));
+  var pad = function (x) { return (x < 10 ? "0" : "") + x; };
+  return pad(Math.floor(s / 3600)) + ":" + pad(Math.floor(s % 3600 / 60)) + ":" + pad(s % 60);
+}
 function tick() {
   var now = new Date();
-  var off = new Date(now); off.setHours(18, 0, 0, 0);
-  var start = new Date(now); start.setHours(9, 0, 0, 0);
-  var sub = document.getElementById("clockSub");
+  var ci = clockinDate();
+  var off = new Date(ci.getTime() + 9 * 3600 * 1000);   // setHours 自动跨日
+  var dinner = new Date(now); dinner.setHours(18, 0, 0, 0);
+  var offEl = document.getElementById("offClock");
+  var dinEl = document.getElementById("dinnerClock");
   var note = document.getElementById("dayNote");
-  if (now < start) {
-    document.getElementById("countdown").textContent = "还没开工";
-    sub.textContent = "珍惜最后的自由时光";
-    document.getElementById("dayBar").style.width = "0%";
-    note.textContent = "进度条 0%，一片净土";
+  var bar = document.getElementById("dayBar");
+
+  if (now < ci) {   // 还没打卡
+    offEl.textContent = "--:--:--";
+    dinEl.textContent = now < dinner ? fmtRemain(dinner - now) : "可以吃 🍚";
+    bar.style.width = "0%";
+    note.textContent = "还没上班，进度条保持清白";
     return;
   }
+  dinEl.textContent = now < dinner ? fmtRemain(dinner - now) : "开吃 🍚";
   if (now >= off) {
-    document.getElementById("countdown").textContent = "已下班 🎉";
-    sub.textContent = "此刻的你，重获自由";
-    document.getElementById("dayBar").style.width = "100%";
-    note.textContent = "牛马进度 100%，今日功德圆满";
-    return;
+    offEl.textContent = "已下班 🎉";
+    bar.style.width = "100%";
+    note.textContent = "牛马进度 100%，功德圆满，请勿加班";
+  } else {
+    offEl.textContent = fmtRemain(off - now);
+    var total = off - ci, done = now - ci;
+    var pct = Math.min(100, Math.round(done / total * 100));
+    bar.style.width = pct + "%";
+    note.textContent = "今日牛马进度 " + pct + "%"
+      + (now >= dinner ? " · 干饭时段，吃饱再战"
+      : pct >= 80 ? " · 冲刺阶段！" : "");
   }
-  var remain = off - now;
-  var h = Math.floor(remain / 3600000);
-  var m = Math.floor(remain % 3600000 / 60000);
-  var s = Math.floor(remain % 60000 / 1000);
-  var pad = function (x) { return (x < 10 ? "0" : "") + x; };
-  document.getElementById("countdown").textContent = pad(h) + ":" + pad(m) + ":" + pad(s);
-  sub.textContent = "距离 18:00 解放";
-  var total = off - start, done = now - start;
-  var pct = Math.min(100, Math.round(done / total * 100));
-  document.getElementById("dayBar").style.width = pct + "%";
-  note.textContent = "今日牛马进度 " + pct + "%" + (pct >= 80 ? " · 冲刺阶段！" : "");
 }
 tick();
 setInterval(tick, 1000);
