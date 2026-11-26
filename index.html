@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>玩具箱 · Toolbox</title>
+<style>
+  :root {
+    --bg: #fdf6e3;
+    --ink: #2b2b2b;
+    --card: #ffffff;
+    --line: #eee3c8;
+    --red: #e0533d;
+    --blue: #3d6be0;
+    --green: #2f9e5f;
+    --orange: #e08a3d;
+    --purple: #8a5ce0;
+    --shadow: 0 3px 0 rgba(43,43,43,.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.7;
+    min-height: 100vh;
+    background-image: radial-gradient(circle at 1px 1px, rgba(43,43,43,.05) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 40px 20px 80px; }
+
+  header { text-align: center; margin-bottom: 40px; }
+  header .logo { font-size: 52px; }
+  header h1 { font-size: 34px; font-weight: 800; letter-spacing: .04em; }
+  header p { color: #8a7f68; font-size: 15px; margin-top: 4px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+
+  .toy {
+    background: var(--card); border: 2px solid var(--ink); border-radius: 16px;
+    box-shadow: var(--shadow); padding: 22px; overflow: hidden;
+    transition: transform .15s ease;
+  }
+  .toy:hover { transform: translateY(-2px); }
+  .toy h3 { font-size: 18px; font-weight: 800; margin-bottom: 2px; }
+  .toy .desc { font-size: 13px; color: #999; margin-bottom: 14px; }
+
+  button {
+    font-family: inherit; font-size: 15px; font-weight: 700;
+    padding: 10px 22px; border-radius: 12px; border: 2px solid var(--ink);
+    background: #ffe98a; color: var(--ink); cursor: pointer;
+    box-shadow: 0 3px 0 var(--ink); transition: all .08s ease;
+  }
+  button:active { transform: translateY(3px); box-shadow: 0 0 0 var(--ink); }
+  button:disabled { opacity: .5; cursor: wait; }
+
+  /* ---- 午饭 ---- */
+  .lunch-result {
+    min-height: 58px; display: flex; align-items: center; gap: 10px;
+    font-size: 22px; font-weight: 800; margin: 12px 0;
+  }
+  .lunch-result .emoji { font-size: 34px; }
+  .lunch-sub { font-size: 13px; color: #999; min-height: 20px; }
+
+  /* ---- 黄历 ---- */
+  .almanac-row { display: flex; gap: 10px; margin: 10px 0; }
+  .almanac-chip {
+    flex: 1; border: 2px solid var(--ink); border-radius: 12px; padding: 10px 12px;
+    font-size: 14px;
+  }
+  .almanac-chip .yi {
+    display: inline-block; width: 26px; height: 26px; line-height: 24px; text-align: center;
+    border-radius: 50%; color: #fff; font-weight: 800; margin-right: 8px; font-size: 14px;
+  }
+  .chip-yi { background: var(--green); border-color: var(--green); }
+  .chip-ji { background: var(--red); border-color: var(--red); }
+  .fish-meter { margin-top: 14px; }
+  .fish-meter .label { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+  .bar { height: 14px; border: 2px solid var(--ink); border-radius: 999px; background: #f4ecd7; overflow: hidden; }
+  .bar > div { height: 100%; background: repeating-linear-gradient(-45deg, #58c0ff 0 8px, #7fd0ff 8px 16px); transition: width .8s ease; }
+  .fish-note { font-size: 13px; color: #8a7f68; margin-top: 6px; }
+
+  /* ---- 选择困难 ---- */
+  .choices-input { display: flex; gap: 8px; margin-bottom: 10px; }
+  .choices-input input {
+    flex: 1; font-family: inherit; font-size: 15px; padding: 9px 14px;
+    border: 2px solid var(--ink); border-radius: 12px; outline: none; background: #fffdf5;
+  }
+  .choices-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; min-height: 34px; }
+  .choice-chip {
+    font-size: 14px; padding: 5px 14px; border: 2px solid var(--ink); border-radius: 999px;
+    background: #efeaff; cursor: pointer; user-select: none;
+  }
+  .choice-chip:hover { background: var(--purple); color: #fff; }
+  .pick-result { min-height: 54px; display: flex; align-items: center; font-size: 24px; font-weight: 800; }
+  .pick-result .pulse { animation: pulse .25s ease infinite alternate; }
+  @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.12); } }
+
+  /* ---- 倒计时 ---- */
+  .clock { font-size: 40px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+  .clock-sub { font-size: 13px; color: #999; margin: 2px 0 12px; }
+  .day-bar { height: 14px; border: 2px solid var(--ink); border-radius: 999px; background: #f4ecd7; overflow: hidden; }
+  .day-bar > div { height: 100%; background: repeating-linear-gradient(-45deg, #ffb35c 0 8px, #ffc87a 8px 16px); }
+  .day-note { font-size: 13px; color: #8a7f68; margin-top: 6px; }
+
+  /* ---- 硬币 ---- */
+  .coin-area { display: flex; align-items: center; gap: 18px; min-height: 84px; }
+  .coin {
+    width: 72px; height: 72px; border-radius: 50%; border: 3px solid var(--ink);
+    background: radial-gradient(circle at 35% 30%, #ffe082, #f5b40a);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; font-weight: 800; flex-shrink: 0;
+  }
+  .coin.flipping { animation: flip .8s ease; }
+  @keyframes flip {
+    0% { transform: rotateX(0) translateY(0); }
+    40% { transform: rotateX(720deg) translateY(-34px); }
+    70% { transform: rotateX(1080deg) translateY(0); }
+    85% { transform: rotateX(1260deg) translateY(-8px); }
+    100% { transform: rotateX(1440deg) translateY(0); }
+  }
+  .coin-verdict { font-size: 20px; font-weight: 800; }
+
+  footer { text-align: center; margin-top: 56px; color: #b0a488; font-size: 13px; }
+  footer .hint { margin-top: 6px; }
+
+  /* ================= 小游戏区 ================= */
+  .sec-title { text-align: center; font-size: 24px; font-weight: 800; margin: 56px 0 24px; letter-spacing: .06em; }
+
+  /* 贪吃蛇 */
+  .snake-wrap { position: relative; width: 240px; margin: 0 auto; }
+  #snakeCv { display: block; border: 2px solid var(--ink); border-radius: 12px; background: #f7f2df; }
+  .overlay {
+    position: absolute; inset: 0; background: rgba(43,43,43,.72); color: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; border-radius: 12px; font-weight: 800; text-align: center; padding: 0 12px;
+  }
+  .hidden { display: none; }
+  .snake-hud { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; margin-top: 10px; }
+
+  /* 打地鼠 */
+  .mole-hud { display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+  .mole-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  .hole {
+    position: relative; height: 64px; border: 2px solid var(--ink); border-radius: 14px;
+    background: #e9dfc6; overflow: hidden; cursor: pointer;
+  }
+  .hole .mole {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 34px; opacity: 0; transform: translateY(45%); transition: .12s ease;
+  }
+  .hole.up .mole { opacity: 1; transform: none; }
+  .hole.bonk { background: #f6c1b6; }
+
+  /* 记忆翻牌 */
+  .mem-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0 14px; }
+  .mem-card {
+    aspect-ratio: 1; border: 2px solid var(--ink); border-radius: 10px; background: #ffe98a;
+    display: flex; align-items: center; justify-content: center; font-size: 26px;
+    cursor: pointer; user-select: none; transition: background .12s ease;
+  }
+  .mem-card:hover { background: #ffdf5c; }
+  .mem-card.open { background: #fff; cursor: default; }
+  .mem-card.matched { background: #d6f2df; cursor: default; opacity: .85; }
+
+  /* 反应力 */
+  .reaction-box {
+    border: 2px solid var(--ink); border-radius: 12px; height: 120px;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    font-weight: 800; font-size: 16px; cursor: pointer; user-select: none;
+    background: #f2a3a3; padding: 0 12px; transition: background .1s;
+  }
+  .reaction-box.go { background: #a8e6b8; }
+  .reaction-stats { font-size: 13px; color: #8a7f68; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="logo">🧰</div>
+  <h1>玩具箱</h1>
+  <p>一些没用但很好玩的小东西 · 会慢慢加新玩具</p>
+</header>
+
+<div class="grid">
+
+  <!-- ============ 午饭吃啥 ============ -->
+  <div class="toy">
+    <h3>🍜 今天午饭吃啥</h3>
+    <div class="desc">「随便」是个坏答案，我帮你选</div>
+    <div class="lunch-result" id="lunchResult"><span class="emoji">🤔</span><span>想好了再转，别赖账</span></div>
+    <div class="lunch-sub" id="lunchSub"></div>
+    <button id="lunchBtn" onclick="spinLunch()">转起来</button>
+  </div>
+
+  <!-- ============ 打工黄历 ============ -->
+  <div class="toy">
+    <h3>📅 打工黄历</h3>
+    <div class="desc">今日宜忌 · 全公司统一 · 明天自动换</div>
+    <div id="almanacDate" style="font-size:13px;color:#8a7f68;margin-bottom:8px;"></div>
+    <div class="almanac-row">
+      <div class="almanac-chip"><span class="yi chip-yi">宜</span><span id="yiText"></span></div>
+      <div class="almanac-chip"><span class="yi chip-ji">忌</span><span id="jiText"></span></div>
+    </div>
+    <div class="fish-meter">
+      <div class="label">🐟 今日摸鱼指数：<span id="fishVal">--</span></div>
+      <div class="bar"><div id="fishBar" style="width:0%"></div></div>
+      <div class="fish-note" id="fishNote"></div>
+    </div>
+  </div>
+
+  <!-- ============ 选择困难救星 ============ -->
+  <div class="toy">
+    <h3>⚖️ 选择困难救星</h3>
+    <div class="desc">把选项丢进来，命运替你决定</div>
+    <div class="choices-input">
+      <input id="choiceInput" placeholder="输入一个选项，回车添加" maxlength="20"
+             onkeydown="if(event.key==='Enter')addChoice()">
+      <button onclick="addChoice()" style="padding:9px 16px;">＋</button>
+    </div>
+    <div class="choices-list" id="choicesList"></div>
+    <div class="pick-result" id="pickResult"></div>
+    <button id="pickBtn" onclick="pickOne()" disabled>让命运选</button>
+  </div>
+
+  <!-- ============ 下班倒计时 ============ -->
+  <div class="toy">
+    <h3>⏰ 牛马进度条</h3>
+    <div class="desc">距离解放还有——</div>
+    <div class="clock" id="countdown">--:--:--</div>
+    <div class="clock-sub" id="clockSub"></div>
+    <div class="day-bar"><div id="dayBar" style="width:0%"></div></div>
+    <div class="day-note" id="dayNote"></div>
+  </div>
+
+  <!-- ============ 抛硬币 ============ -->
+  <div class="toy">
+    <h3>🪙 硬币帮你决定</h3>
+    <div class="desc">当你抛出硬币的那一刻，心里其实已经有答案了</div>
+    <div class="coin-area">
+      <div class="coin" id="coin">?</div>
+      <div>
+        <div class="coin-verdict" id="coinVerdict">——</div>
+        <div style="font-size:12px;color:#999;">正面：正 · 反面：反</div>
+      </div>
+    </div>
+    <button id="coinBtn" onclick="flipCoin()">抛！</button>
+  </div>
+
+</div>
+
+<div class="sec-title">🎮 小游戏 · 来真的</div>
+
+<div class="grid">
+
+  <!-- ============ 贪吃蛇 ============ -->
+  <div class="toy">
+    <h3>🐍 贪吃蛇</h3>
+    <div class="desc">方向键 / WASD 控制，撞墙或咬到自己就寄</div>
+    <div class="snake-wrap">
+      <canvas id="snakeCv" width="240" height="240"></canvas>
+      <div class="overlay" id="snakeOverlay">
+        <div id="snakeMsg">准备好了吗？</div>
+        <button id="snakeBtn" onclick="snakeStart()">开始</button>
+      </div>
+    </div>
+    <div class="snake-hud"><span>得分 <span id="snakeScore">0</span></span><span>最高 <span id="snakeBest">0</span></span></div>
+  </div>
+
+  <!-- ============ 打地鼠 ============ -->
+  <div class="toy">
+    <h3>🔨 打地鼠</h3>
+    <div class="desc">30 秒，看你能敲中几只</div>
+    <div class="mole-hud"><span>得分 <span id="moleScore">0</span></span><span>时间 <span id="moleTime">30</span>s</span></div>
+    <div class="mole-grid" id="moleGrid"></div>
+    <button id="moleBtn" onclick="moleStart()">开始</button>
+  </div>
+
+  <!-- ============ 记忆翻牌 ============ -->
+  <div class="toy">
+    <h3>🃏 记忆翻牌</h3>
+    <div class="desc">翻出全部 6 对，步数越少越强</div>
+    <div style="font-size:14px;font-weight:700;margin-bottom:4px;">步数 <span id="memMoves">0</span> · <span id="memMsg">点击卡片开始</span></div>
+    <div class="mem-grid" id="memGrid"></div>
+    <button onclick="memStart()">重新洗牌</button>
+  </div>
+
+  <!-- ============ 反应力测试 ============ -->
+  <div class="toy">
+    <h3>⚡ 反应力测试</h3>
+    <div class="desc">等它变绿的瞬间点下去，抢跑 = 重来</div>
+    <div class="reaction-box" id="reactBox" onclick="reactClick()">点击开始</div>
+    <div class="reaction-stats">本次：<span id="reactNow">--</span> ms · 你的最好成绩：<span id="reactBest">--</span> ms</div>
+  </div>
+
+</div>
+
+<footer>
+  🧰 玩具箱 · 纯前端，不联网，不收集任何东西
+  <div class="hint">想加新玩具随时说</div>
+</footer>
+
+</div>
+
+<script>
+/* ================= 午饭吃啥 ================= */
+var LUNCHES = [
+  ["🍜", "牛肉面", "加个蛋，今天值得"],
+  ["🍲", "麻辣烫", "荤素自由，微辣起步"],
+  ["🥟", "饺子", "什么馅不重要，醋重要"],
+  ["🍗", "黄焖鸡", "汤汁拌饭，人生圆满"],
+  ["🍱", "公司/学校食堂", "离得近就是正义"],
+  ["🥗", "轻食沙拉", "吃完感觉自己是鹿"],
+  ["🍕", "披萨", "碳水 + 芝士 = 快乐"],
+  ["🍜", "兰州拉面", "一清二白三红四绿"],
+  ["🍛", "咖喱饭", "浓稠才好吃"],
+  ["🍢", "麻辣香锅", "和麻辣烫二选一都行"],
+  ["🍚", "猪脚饭", "隆江猪脚，硬菜之王"],
+  ["🥪", "三明治", "赶时间的时候它会赢"]
+];
+var lunchSpinning = false;
+function spinLunch() {
+  if (lunchSpinning) return;
+  lunchSpinning = true;
+  var btn = document.getElementById("lunchBtn");
+  var res = document.getElementById("lunchResult");
+  var sub = document.getElementById("lunchSub");
+  btn.disabled = true;
+  var i = 0, total = 14 + Math.floor(Math.random() * 8);
+  var timer = setInterval(function () {
+    var item = LUNCHES[i % LUNCHES.length];
+    res.innerHTML = '<span class="emoji">' + item[0] + '</span><span>' + item[1] + '</span>';
+    if (++i > total) {
+      clearInterval(timer);
+      btn.disabled = false;
+      lunchSpinning = false;
+      sub.textContent = item[2] + "（本结果由命运负责，不接受申诉）";
+    }
+  }, 90);
+}
+
+/* ================= 打工黄历（按日期固定，当天刷新页面结果不变） ================= */
+function hashStr(s) {
+  var h = 5381;
+  for (var i = 0; i < s.length; i++) { h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; }
+  return h;
+}
+function almanac() {
+  var today = new Date();
+  var key = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate();
+  var seed = hashStr(key);
+  var YI = ["摸鱼", "带薪喝水", "摸鱼式开会", "把周报拖到周一", "茶水间社交", "准时下班", "假装在改 bug", "点一杯奶茶"];
+  var JI = ["开长会", "说真话", "主动揽活", "翻别人聊天记录", "立 flag", "回复「收到」后真的去做", "和老板对眼神", "加班"];
+  var NOTES = [
+    "指数越高，摸鱼越有理直气壮的理论依据。",
+    "注意：摸鱼指数与下班时间呈显著正相关（我编的）。",
+    "今天适合做点无用的事。",
+    "真正的猛士，敢于在指数 40 的日子工作。"
+  ];
+  var fish = 20 + (seed % 81); // 20~100
+  document.getElementById("almanacDate").textContent =
+    key + " · 天气随缘，心情自定";
+  document.getElementById("yiText").textContent = YI[seed % YI.length];
+  document.getElementById("jiText").textContent = JI[(seed >> 3) % JI.length];
+  document.getElementById("fishVal").textContent = fish + " / 100";
+  document.getElementById("fishBar").style.width = fish + "%";
+  document.getElementById("fishNote").textContent =
+    NOTES[(seed >> 6) % NOTES.length] + "（明天会变，今天认命）";
+}
+almanac();
+
+/* ================= 选择困难救星 ================= */
+var choices = [];
+function renderChoices() {
+  var list = document.getElementById("choicesList");
+  list.innerHTML = "";
+  choices.forEach(function (c, idx) {
+    var chip = document.createElement("span");
+    chip.className = "choice-chip";
+    chip.textContent = c + " ×";
+    chip.onclick = function () { choices.splice(idx, 1); renderChoices(); updatePickBtn(); };
+    list.appendChild(chip);
+  });
+}
+function updatePickBtn() {
+  document.getElementById("pickBtn").disabled = choices.length < 2;
+}
+function addChoice() {
+  var input = document.getElementById("choiceInput");
+  var v = input.value.trim();
+  if (!v || choices.indexOf(v) >= 0 || choices.length >= 12) return;
+  choices.push(v);
+  input.value = "";
+  renderChoices(); updatePickBtn();
+  document.getElementById("pickResult").textContent = "";
+}
+var picking = false;
+function pickOne() {
+  if (picking || choices.length < 2) return;
+  picking = true;
+  var btn = document.getElementById("pickBtn");
+  var res = document.getElementById("pickResult");
+  btn.disabled = true;
+  var i = 0, total = 16 + Math.floor(Math.random() * 6);
+  var timer = setInterval(function () {
+    res.textContent = choices[i % choices.length];
+    res.className = "pick-result pulse";
+    if (++i > total) {
+      clearInterval(timer);
+      res.className = "pick-result";
+      res.textContent = "就选：" + res.textContent + " ✅";
+      btn.disabled = false;
+      picking = false;
+    }
+  }, 110);
+}
+
+/* ================= 牛马进度条（到 18:00） ================= */
+function tick() {
+  var now = new Date();
+  var off = new Date(now); off.setHours(18, 0, 0, 0);
+  var start = new Date(now); start.setHours(9, 0, 0, 0);
+  var sub = document.getElementById("clockSub");
+  var note = document.getElementById("dayNote");
+  if (now < start) {
+    document.getElementById("countdown").textContent = "还没开工";
+    sub.textContent = "珍惜最后的自由时光";
+    document.getElementById("dayBar").style.width = "0%";
+    note.textContent = "进度条 0%，一片净土";
+    return;
+  }
+  if (now >= off) {
+    document.getElementById("countdown").textContent = "已下班 🎉";
+    sub.textContent = "此刻的你，重获自由";
+    document.getElementById("dayBar").style.width = "100%";
+    note.textContent = "牛马进度 100%，今日功德圆满";
+    return;
+  }
+  var remain = off - now;
+  var h = Math.floor(remain / 3600000);
+  var m = Math.floor(remain % 3600000 / 60000);
+  var s = Math.floor(remain % 60000 / 1000);
+  var pad = function (x) { return (x < 10 ? "0" : "") + x; };
+  document.getElementById("countdown").textContent = pad(h) + ":" + pad(m) + ":" + pad(s);
+  sub.textContent = "距离 18:00 解放";
+  var total = off - start, done = now - start;
+  var pct = Math.min(100, Math.round(done / total * 100));
+  document.getElementById("dayBar").style.width = pct + "%";
+  note.textContent = "今日牛马进度 " + pct + "%" + (pct >= 80 ? " · 冲刺阶段！" : "");
+}
+tick();
+setInterval(tick, 1000);
+
+/* ================= 抛硬币 ================= */
+var coinBusy = false;
+function flipCoin() {
+  if (coinBusy) return;
+  coinBusy = true;
+  var btn = document.getElementById("coinBtn");
+  var coin = document.getElementById("coin");
+  var verdict = document.getElementById("coinVerdict");
+  btn.disabled = true;
+  coin.classList.remove("flipping");
+  void coin.offsetWidth; // 重新触发动画
+  coin.classList.add("flipping");
+  setTimeout(function () {
+    var isHeads = Math.random() < 0.5;
+    coin.textContent = isHeads ? "正" : "反";
+    verdict.textContent = isHeads ? "正面！就按第一直觉来" : "反面！听天意的";
+    btn.disabled = false;
+    coinBusy = false;
+  }, 800);
+}
+</script>
+
+<script>
+/* ================= 贪吃蛇 ================= */
+(function () {
+  var cv = document.getElementById("snakeCv");
+  var ctx = cv.getContext("2d");
+  var N = 16, CELL = 15;
+  var snake, dir, nextDir, food, timer = null, score = 0;
+  var best = +(localStorage.getItem("toy_snake_best") || 0);
+  var elScore = document.getElementById("snakeScore");
+  var elBest = document.getElementById("snakeBest");
+  var overlay = document.getElementById("snakeOverlay");
+  var msg = document.getElementById("snakeMsg");
+  var btn = document.getElementById("snakeBtn");
+  elBest.textContent = best;
+
+  function draw() {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    // 食物
+    ctx.font = "13px serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("🍎", food.x * CELL + CELL / 2, food.y * CELL + CELL / 2 + 1);
+    // 蛇
+    for (var i = snake.length - 1; i >= 0; i--) {
+      ctx.fillStyle = i === 0 ? "#0f5c4c" : "#3d6be0";
+      ctx.beginPath();
+      var x = snake[i].x * CELL, y = snake[i].y * CELL;
+      if (ctx.roundRect) { ctx.roundRect(x + 1, y + 1, CELL - 2, CELL - 2, 4); }
+      else { ctx.rect(x + 1, y + 1, CELL - 2, CELL - 2); }
+      ctx.fill();
+    }
+  }
+  function spawnFood() {
+    while (true) {
+      var f = { x: Math.floor(Math.random() * N), y: Math.floor(Math.random() * N) };
+      if (!snake.some(function (s) { return s.x === f.x && s.y === f.y; })) { food = f; return; }
+    }
+  }
+  function gameOver() {
+    clearInterval(timer); timer = null;
+    if (score > best) { best = score; localStorage.setItem("toy_snake_best", best); elBest.textContent = best; }
+    msg.textContent = "寄！本局 " + score + " 分" + (score >= best && score > 0 ? " · 新纪录 🎉" : "");
+    btn.textContent = "再来";
+    overlay.classList.remove("hidden");
+  }
+  function tick() {
+    dir = nextDir;
+    var head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+    if (head.x < 0 || head.y < 0 || head.x >= N || head.y >= N ||
+        snake.some(function (s) { return s.x === head.x && s.y === head.y; })) {
+      gameOver(); return;
+    }
+    snake.unshift(head);
+    if (head.x === food.x && head.y === food.y) {
+      score += 10; elScore.textContent = score; spawnFood();
+    } else {
+      snake.pop();
+    }
+    draw();
+  }
+  window.snakeStart = function () {
+    if (timer) clearInterval(timer);
+    snake = [{ x: 8, y: 8 }, { x: 7, y: 8 }, { x: 6, y: 8 }];
+    dir = { x: 1, y: 0 }; nextDir = dir;
+    score = 0; elScore.textContent = "0";
+    spawnFood(); draw();
+    overlay.classList.add("hidden");
+    timer = setInterval(tick, 130);
+  };
+  document.addEventListener("keydown", function (e) {
+    if (!timer) return;
+    var map = {
+      ArrowUp: { x: 0, y: -1 }, ArrowDown: { x: 0, y: 1 },
+      ArrowLeft: { x: -1, y: 0 }, ArrowRight: { x: 1, y: 0 },
+      w: { x: 0, y: -1 }, s: { x: 0, y: 1 }, a: { x: -1, y: 0 }, d: { x: 1, y: 0 }
+    };
+    var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    var nd = map[k];
+    if (!nd) return;
+    e.preventDefault();
+    if (nd.x === -dir.x && nd.y === -dir.y) return; // 禁止原地掉头
+    nextDir = nd;
+  });
+  // 画个初始画面
+  snake = [{ x: 8, y: 8 }, { x: 7, y: 8 }, { x: 6, y: 8 }];
+  food = { x: 12, y: 8 }; draw();
+})();
+
+/* ================= 打地鼠 ================= */
+var moleRunning = false, moleScore = 0, moleLeft = 30, moleClock = null, moleSpawn = null;
+(function buildMoles() {
+  var grid = document.getElementById("moleGrid");
+  for (var i = 0; i < 9; i++) {
+    var h = document.createElement("div");
+    h.className = "hole";
+    h.innerHTML = '<div class="mole">🐹</div>';
+    h.onclick = function () {
+      if (!moleRunning || !this.classList.contains("up")) return;
+      moleScore++;
+      document.getElementById("moleScore").textContent = moleScore;
+      this.classList.add("bonk");
+      this.querySelector(".mole").textContent = "💥";
+      var self = this;
+      setTimeout(function () {
+        self.classList.remove("up", "bonk");
+        self.querySelector(".mole").textContent = "🐹";
+      }, 200);
+    };
+    grid.appendChild(h);
+  }
+})();
+function moleStart() {
+  if (moleRunning) return;
+  moleRunning = true; moleScore = 0; moleLeft = 30;
+  document.getElementById("moleScore").textContent = "0";
+  document.getElementById("moleTime").textContent = "30";
+  document.getElementById("moleBtn").disabled = true;
+  var holes = document.querySelectorAll("#moleGrid .hole");
+  moleClock = setInterval(function () {
+    moleLeft--;
+    document.getElementById("moleTime").textContent = moleLeft;
+    if (moleLeft <= 0) {
+      clearInterval(moleClock); clearTimeout(moleSpawn);
+      holes.forEach(function (h) { h.classList.remove("up"); });
+      moleRunning = false;
+      document.getElementById("moleBtn").disabled = false;
+      document.getElementById("moleBtn").textContent = "再来一把";
+      alert("时间到！敲中 " + moleScore + " 只 🐹" + (moleScore >= 20 ? "，锤王就是你" : moleScore >= 10 ? "，手速在线" : "，地鼠笑了"));
+    }
+  }, 1000);
+  (function spawn() {
+    if (!moleRunning) return;
+    var free = Array.prototype.filter.call(holes, function (h) { return !h.classList.contains("up"); });
+    if (free.length) {
+      var h = free[Math.floor(Math.random() * free.length)];
+      h.classList.add("up");
+      setTimeout(function () { h.classList.remove("up"); }, 600 + Math.random() * 350);
+    }
+    moleSpawn = setTimeout(spawn, 380 + Math.random() * 450);
+  })();
+}
+
+/* ================= 记忆翻牌 ================= */
+var memFirst = null, memLock = false, memMoves = 0, memFound = 0;
+function memStart() {
+  var grid = document.getElementById("memGrid");
+  grid.innerHTML = "";
+  memFirst = null; memLock = false; memMoves = 0; memFound = 0;
+  document.getElementById("memMoves").textContent = "0";
+  document.getElementById("memMsg").textContent = "点击卡片开始";
+  var emojis = ["🍕", "🐸", "🚀", "🎧", "🦄", "🍩"];
+  var cards = emojis.concat(emojis).sort(function () { return Math.random() - 0.5; });
+  cards.forEach(function (e) {
+    var c = document.createElement("div");
+    c.className = "mem-card";
+    c.textContent = "❓";
+    c.dataset.emoji = e;
+    c.onclick = memFlip;
+    grid.appendChild(c);
+  });
+}
+function memFlip() {
+  if (memLock || this.classList.contains("open") || this.classList.contains("matched")) return;
+  this.classList.add("open");
+  this.textContent = this.dataset.emoji;
+  if (!memFirst) { memFirst = this; return; }
+  memMoves++;
+  document.getElementById("memMoves").textContent = memMoves;
+  var a = memFirst, b = this;
+  memFirst = null;
+  if (a.dataset.emoji === b.dataset.emoji) {
+    a.classList.add("matched"); b.classList.add("matched");
+    a.classList.remove("open"); b.classList.remove("open");
+    if (++memFound === 6) {
+      document.getElementById("memMsg").textContent = "🎉 通关！只用了 " + memMoves + " 步" + (memMoves <= 10 ? "，记性惊人" : "");
+    }
+  } else {
+    memLock = true;
+    setTimeout(function () {
+      a.classList.remove("open"); b.classList.remove("open");
+      a.textContent = "❓"; b.textContent = "❓";
+      memLock = false;
+    }, 650);
+  }
+}
+memStart();
+
+/* ================= 反应力测试 ================= */
+var reactState = "idle", reactTs = 0, reactTimer = null;
+var reactBest = +(localStorage.getItem("toy_react_best") || 0);
+if (reactBest) document.getElementById("reactBest").textContent = reactBest;
+var reactBox = document.getElementById("reactBox");
+function reactClick() {
+  if (reactState === "idle") {
+    reactState = "waiting";
+    reactBox.classList.remove("go");
+    reactBox.textContent = "屏住呼吸…变绿就点！";
+    reactTimer = setTimeout(function () {
+      reactState = "go";
+      reactTs = performance.now();
+      reactBox.classList.add("go");
+      reactBox.textContent = "现在！点！";
+    }, 1000 + Math.random() * 1800);
+  } else if (reactState === "waiting") {
+    clearTimeout(reactTimer);
+    reactState = "idle";
+    reactBox.classList.remove("go");
+    reactBox.textContent = "🚫 抢跑啦！点我重来";
+  } else if (reactState === "go") {
+    var dt = Math.round(performance.now() - reactTs);
+    reactState = "idle";
+    reactBox.classList.remove("go");
+    document.getElementById("reactNow").textContent = dt;
+    var tag = dt < 200 ? "超人级 ⚡" : dt < 280 ? "电竞选手级" : dt < 400 ? "正常人类" : "在摸鱼吧";
+    if (!reactBest || dt < reactBest) {
+      reactBest = dt;
+      localStorage.setItem("toy_react_best", reactBest);
+      document.getElementById("reactBest").textContent = reactBest;
+      tag += " · 新纪录！";
+    }
+    reactBox.textContent = dt + " ms · " + tag + " · 点我再测";
+  }
+}
+</script>
+</body>
+</html>
